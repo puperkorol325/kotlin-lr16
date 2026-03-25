@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">lr7kotlin</string>
+    <string name="hello">Hello, world!</string>
+    <string name="notes_title">Заметки</string>
+    <string name="fab_add">Добавить заметку</string>
+    <string name="note_title">Название заметки</string>
+    <string name="note_desc">Описание заметки</string>
+    <string name="note_save">Сохранить</string>
+    <string name="note_cancel">Отмена</string>
+</resources>
