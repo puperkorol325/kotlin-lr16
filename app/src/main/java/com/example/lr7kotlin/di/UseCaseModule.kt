@@ -1,8 +1,8 @@
-package com.example.lr7kotlin
+package com.example.lr7kotlin.di
 
-import com.example.lr7kotlin.domain.repository.TaskRepository
 import com.example.lr7kotlin.domain.usecase.AddTaskUseCase
 import com.example.lr7kotlin.domain.usecase.GetTasksUseCase
+import com.example.lr7kotlin.domain.repository.TaskRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

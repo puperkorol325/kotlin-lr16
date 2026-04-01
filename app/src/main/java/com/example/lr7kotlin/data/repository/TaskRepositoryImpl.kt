@@ -1,62 +1,48 @@
 package com.example.lr7kotlin.data.repository
 
-import com.example.lr7kotlin.data.remote.api.TaskApi
-import com.example.lr7kotlin.data.remote.mapper.toDomain
-import com.example.lr7kotlin.data.remote.mapper.toDto
+import com.example.lr7kotlin.data.local.LocalTaskDataSource
+import com.example.lr7kotlin.data.remote.RemoteTaskDataSource
 import com.example.lr7kotlin.domain.model.Task
 import com.example.lr7kotlin.domain.repository.TaskRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.IOException
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
-class TaskRepositoryImpl(
-    private val api: TaskApi
+@Singleton
+class TaskRepositoryImpl @Inject constructor(
+    private val localDataSource: LocalTaskDataSource,
+    private val remoteDataSource: RemoteTaskDataSource
 ) : TaskRepository {
 
-    override suspend fun getTasks(): Result<List<Task>> = withContext(Dispatchers.IO) {
-        try {
-            val dtos = api.getTasks()
-            Result.success(dtos.map { it.toDomain() })
-        } catch (e: IOException) { Result.failure(e)
-
+    override suspend fun getTasks(): Result<List<Task>> {
+        return remoteDataSource.getAllTasks().onSuccess { tasks ->
+            tasks.forEach { task ->
+                localDataSource.insertTask(task)
+            }
         }
     }
 
-    override suspend fun getTaskById(id: Int): Result<Task?> = withContext(Dispatchers.IO) {
-        try {
-            val dto = api.getTaskById(id)
-            Result.success(dto.toDomain())
-        } catch (e: Exception) {
-            Result.failure(e)
+    override fun getTasksFlow(): Flow<List<Task>> =
+        localDataSource.getAllTasks()
+
+    override suspend fun getTaskById(id: Int): Result<Task?> =
+        remoteDataSource.getTaskById(id)
+
+    override suspend fun addTask(task: Task): Result<Unit> {
+        return remoteDataSource.addTask(task).map {
+            localDataSource.insertTask(it)
         }
     }
 
-    override suspend fun addTask(task: Task): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            api.addTask(task.toDto())
-            Result.success(Unit)
-        } catch (e: IOException) {
-            Result.failure(e)
+    override suspend fun updateTask(task: Task): Result<Unit> {
+        return remoteDataSource.updateTask(task.id, task).map {
+            localDataSource.updateTask(it)
         }
     }
 
-    override suspend fun updateTask(task: Task): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            api.updateTask(task.id, task.toDto())
-            Result.success(Unit)
-        } catch (e: IOException) {
-            Result.failure(e)
-
-        }
-    }
-
-    override suspend fun deleteTask(id: Int): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            api.deleteTask(id)
-            Result.success(Unit)
-        } catch (e: IOException) {
-            Result.failure(e)
+    override suspend fun deleteTask(id: Int): Result<Unit> {
+        return remoteDataSource.deleteTask(id).onSuccess {
+            localDataSource.deleteTaskById(id)
         }
     }
 }

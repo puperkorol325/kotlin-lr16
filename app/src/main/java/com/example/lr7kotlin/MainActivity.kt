@@ -2,7 +2,6 @@ package com.example.lr7kotlin
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
@@ -44,41 +42,31 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.lr7kotlin.data.remote.api.TaskApi
-import com.example.lr7kotlin.data.repository.TaskRepositoryImpl
 import com.example.lr7kotlin.domain.model.Task
-import com.example.lr7kotlin.domain.repository.TaskRepository
-import com.example.lr7kotlin.domain.usecase.AddTaskUseCase
-import com.example.lr7kotlin.domain.usecase.GetTasksUseCase
 import com.example.lr7kotlin.presentation.tasks.TasksUiState
 import com.example.lr7kotlin.presentation.tasks.TasksViewModel
 import com.example.lr7kotlin.ui.theme.Lr7kotlinTheme
 import com.example.lr7kotlin.ui.theme.ThemeMode
 import com.example.lr7kotlin.ui.theme.Typography
 import dagger.hilt.android.AndroidEntryPoint
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -91,11 +79,13 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             var themeMode by remember { mutableStateOf(ThemeMode.System) }
             val viewModel: TasksViewModel = hiltViewModel()
+
             Lr7kotlinTheme(themeMode = themeMode) {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val windowSizeClass = calculateWindowSizeClass(this)
 
-                var windowSizeClass = calculateWindowSizeClass(this)
-                var showDialog by remember { mutableStateOf<Boolean>(false) };
+                var showDialog by remember { mutableStateOf(false) }
+
                 NavHost(
                     navController = navController,
                     startDestination = Routes.NOTES_LIST
@@ -104,9 +94,9 @@ class MainActivity : ComponentActivity() {
                         Scaffold(
                             topBar = {
                                 TopAppBar(
-                                    themeMode,
+                                    themeMode = themeMode,
                                     onThemeModeChange = { themeMode = it },
-                                    windowSizeClass
+                                    windowSizeClass = windowSizeClass
                                 )
                             },
                             modifier = Modifier.fillMaxSize(),
@@ -114,14 +104,13 @@ class MainActivity : ComponentActivity() {
                                 FloatingActionButton(
                                     onClick = { showDialog = true },
                                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    content = {
-                                        Icon(
-                                            Icons.Default.AddCircle,
-                                            contentDescription = stringResource(R.string.fab_add)
-                                        )
-                                    }
-                                )
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ) {
+                                    Icon(
+                                        Icons.Default.AddCircle,
+                                        contentDescription = stringResource(R.string.fab_add)
+                                    )
+                                }
                             }
                         ) { innerPadding ->
                             TasksScreen(
@@ -130,79 +119,82 @@ class MainActivity : ComponentActivity() {
                                 windowSizeClass = windowSizeClass,
                                 navController = navController
                             )
+
                             if (showDialog) {
-                                var title by remember { mutableStateOf<String>("") }
-                                var description by remember { mutableStateOf<String>("") }
-                                AlertDialog(
-                                    onDismissRequest = { showDialog = false },
-                                    title = { Text(stringResource(R.string.fab_add)) },
-                                    text = {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            OutlinedTextField(
-                                                value = title,
-                                                onValueChange = { title = it },
-                                                label = { Text(stringResource(R.string.note_title)) },
-                                                placeholder = { Text(stringResource(R.string.note_title)) },
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                            OutlinedTextField(
-                                                value = description,
-                                                onValueChange = { description = it },
-                                                label = { Text(stringResource(R.string.note_title)) },
-                                                placeholder = { Text(stringResource(R.string.note_title)) },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                minLines = 2
-                                            )
-                                        }
-                                    },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = {
-                                                if (title.isNotBlank()) {
-//                                                    uiState.tasks.add(
-//                                                        Task(
-//                                                            uiState.tasks[uiState.tasks.count() - 1].id + 1,
-//                                                            title.trim(),
-//                                                            description.trim()
-//                                                        )
-//                                                    )
-                                                    title = ""
-                                                    description = ""
-                                                    showDialog = false
-                                                }
-                                            }
-                                        ) {
-                                            Text(stringResource(R.string.note_save))
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(onClick = { showDialog = false }) {
-                                            Text(stringResource(R.string.note_cancel))
-                                        }
+                                AddTaskDialog(
+                                    onDismiss = { showDialog = false },
+                                    onConfirm = { title, description ->
+                                        viewModel.addTask(title, description)
+                                        showDialog = false
                                     }
                                 )
                             }
                         }
                     }
+
                     composable(
                         route = "note/{noteId}",
                         arguments = listOf(
                             navArgument("noteId") { type = NavType.StringType }
                         )
                     ) { backStackEntry ->
-                        val noteId = backStackEntry.arguments?.getString("noteId")?.toInt();
+                        val noteId = backStackEntry.arguments?.getString("noteId")?.toInt()
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
-                            topBar = { detailTopAppBar(onBack = { navController.popBackStack() }) },
+                            topBar = { detailTopAppBar(onBack = { navController.popBackStack() }) }
                         ) { innerPadding ->
-                            NoteDetailScreen(noteId, uiState, modifier = Modifier.padding(innerPadding))
+                            NoteDetailScreen(
+                                noteId = noteId,
+                                uiState = uiState,
+                                modifier = Modifier.padding(innerPadding)
+                            )
                         }
-
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun AddTaskDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.fab_add)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.note_title)) },
+                    placeholder = { Text(stringResource(R.string.note_title)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onConfirm(title.trim(), description.trim())
+                    }
+                }
+            ) {
+                Text(stringResource(R.string.note_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.note_cancel))
+            }
+        }
+    )
 }
 
 object Routes {
@@ -285,12 +277,11 @@ fun TasksScreen(
                 }
 
                 else -> {
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
                         modifier = modifier,
-                        contentPadding = PaddingValues(
-                            horizontal = horizontalPadding,
-                            vertical = cardPadding
-                        ),
+                        contentPadding = PaddingValues(horizontalPadding),
+                        horizontalArrangement = Arrangement.spacedBy(cardPadding),
                         verticalArrangement = Arrangement.spacedBy(cardPadding)
                     ) {
                         items(uiState.tasks) { item ->
