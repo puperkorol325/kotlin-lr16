@@ -1,4 +1,4 @@
-# Лабораторная работа 18: DI (Hilt) - Часть 2
+# Лабораторная работа 18
 
 ### Задание 1
 
@@ -65,3 +65,19 @@ class TasksViewModel @Inject constructor(
     // Использование ioDispatcher вместо Dispatchers.IO
 }
 ```
+
+### Задание 4
+
+```kotlin
+@HiltViewModel
+class TasksViewModel @Inject constructor(
+    private val getTasksUseCase: GetTasksUseCase,
+    private val addTaskUseCase: AddTaskUseCase,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+) : ViewModel()
+```
+
+**Добавлены зависимости:**
+  - UseCase для получения задач
+  - UseCase для добавления задач
+  - CoroutineDispatcher для фоновых операций
