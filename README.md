@@ -81,3 +81,11 @@ class TasksViewModel @Inject constructor(
   - UseCase для получения задач
   - UseCase для добавления задач
   - CoroutineDispatcher для фоновых операций
+
+<img width="498" height="650" alt="image" src="https://github.com/user-attachments/assets/a72d507f-ab1c-48e7-9529-362d5b0748f3" />
+
+<img width="328" height="231" alt="image" src="https://github.com/user-attachments/assets/deb062fb-7a1f-4e9f-9253-999ba6151936" />
+
+<img width="414" height="632" alt="image" src="https://github.com/user-attachments/assets/86cd4bc6-dfa0-4740-9665-344d5f453d42" />
+
+
