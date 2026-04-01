@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,7 +65,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.app.presentation.tasks.TasksViewModel
 import com.example.lr7kotlin.data.remote.api.TaskApi
 import com.example.lr7kotlin.data.repository.TaskRepositoryImpl
 import com.example.lr7kotlin.domain.model.Task
@@ -72,37 +72,16 @@ import com.example.lr7kotlin.domain.repository.TaskRepository
 import com.example.lr7kotlin.domain.usecase.AddTaskUseCase
 import com.example.lr7kotlin.domain.usecase.GetTasksUseCase
 import com.example.lr7kotlin.presentation.tasks.TasksUiState
+import com.example.lr7kotlin.presentation.tasks.TasksViewModel
 import com.example.lr7kotlin.ui.theme.Lr7kotlinTheme
 import com.example.lr7kotlin.ui.theme.ThemeMode
 import com.example.lr7kotlin.ui.theme.Typography
+import dagger.hilt.android.AndroidEntryPoint
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    class TasksViewModelFactory(
-        private val getTasksUseCase: GetTasksUseCase,
-        private val addTaskUseCase: AddTaskUseCase
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass != TasksViewModel::class.java)
-                throw IllegalArgumentException("Unknown ViewModel")
-            return TasksViewModel(getTasksUseCase, addTaskUseCase) as T
-        }
-    }
-
-    val retrofit = Retrofit.Builder()
-        .baseUrl("https://jsonplaceholder.typicode.com/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    val taskApi = retrofit.create(TaskApi::class.java)
-    val taskRepository: TaskRepository = TaskRepositoryImpl(taskApi)
-
-    val getTasksUseCase = GetTasksUseCase(taskRepository)
-    val addTaskUseCase = AddTaskUseCase(taskRepository)
-
-    val factory = TasksViewModelFactory(getTasksUseCase, addTaskUseCase)
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,7 +90,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             var themeMode by remember { mutableStateOf(ThemeMode.System) }
-            val viewModel: TasksViewModel = ViewModelProvider(this, factory)[TasksViewModel::class.java]
+            val viewModel: TasksViewModel = hiltViewModel()
             Lr7kotlinTheme(themeMode = themeMode) {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
